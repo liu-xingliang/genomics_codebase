@@ -1,0 +1,10 @@
+bjob=<>
+lsf=$bjob.lsf
+[[ -e $lsf ]] && rm $lsf
+echo '#!/bin/bash' >> $lsf
+echo '#BSUB -J' $bjob >> $lsf
+echo '#BSUB -o' $bjob.log >> $lsf
+echo '#BSUB -e' $bjob.err >> $lsf
+echo '#BSUB -q short' >> $lsf
+echo '#BSUB -M 30720 -W 600 -n 4' >> $lsf
+bsub < $lsf

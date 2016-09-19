@@ -1,0 +1,16 @@
+require("ggplot2")
+#args <- commandArgs(trailingOnly = TRUE)
+lib <- "AHC004"
+t <- read.table(paste0(lib,".itvlrate"), sep="\t", header=T)
+t$V1 <- factor(t$V1, levels=c("0", "(0-50]", "(50-100]", "(100-500]", "(500-1000]", "(1000-2000]", ">2000"))
+
+#pdf(paste(lib, ".itvlrate.pdf", sep=""))
+
+ggplot(t, aes(x=average_coverage, y=intervals_rate)) + 
+theme_bw() + 
+theme(axis.title.x = element_blank()) + 
+labs(list(title=lib, y="percentage_of_reads")) + 
+geom_bar(stat="identity") + geom_text(aes(y=intervals_count, labels=intervals_count))
+
+#dev.off()
+
