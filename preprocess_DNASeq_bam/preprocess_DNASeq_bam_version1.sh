@@ -7,8 +7,7 @@ Xmx=$4
 sorted=$5 # 1 means sorted
 ROI=$6 # if NA, use null
 deep=$7 # if 1, deep sequencing, remove downsampling in RTC, IR, DOC 
-BAQ=$8 # if 1, do BAQ
-DOC=$9 # if 1, do DOC
+MD=$8 # if 1, mark duplicates
 
 gatk=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/GATK/GenomeAnalysisTK-3.5/GenomeAnalysisTK.jar
 java="java -XX:+UseSerialGC -Xmx$Xmx"
@@ -37,6 +36,45 @@ dbsnp_file="/mnt/projects/liuxl/ctso4_projects/liuxl/dbsnp/dbSNP144/hg19_noUn/00
 samtools=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/samtools/samtools-1.3/dist/bin/samtools
 samstat=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/samstat/samstat-1.5.1/bin/samstat
 
+if [[ $sorted -ne 1 ]]; then
+    #$java6 -jar $picard SortSam I=$bam O=$(echo $bam | sed -r 's/bam$/sorted.bam/') VALIDATION_STRINGENCY=SILENT SO=coordinate CREATE_INDEX=true
+    echo $java8 -jar $picard SortSam I=$bam O=$(echo $bam | sed -r 's/bam$/sorted.bam/') VALIDATION_STRINGENCY=SILENT SO=coordinate CREATE_INDEX=true
+    $java8 -jar $picard SortSam I=$bam O=$(echo $bam | sed -r 's/bam$/sorted.bam/') VALIDATION_STRINGENCY=SILENT SO=coordinate CREATE_INDEX=true
+
+    bam=$(echo $bam | sed -r 's/bam$/sorted.bam/')
+
+    echo mv $(echo $bam | sed -r 's/bam$/bai/') $bam.bai
+    mv $(echo $bam | sed -r 's/bam$/bai/') $bam.bai
+fi
+
+echo $samtools flagstat $bam '>' $bam.flagstat # to check the secondary alignment proportion
+$samtools flagstat $bam > $bam.flagstat # to check the secondary alignment proportion
+
+echo $samtools view -h -F 0x100 $bam '|' samtools view -bS - '>' $(echo $bam | sed -r 's/bam$/nosecond.bam/')
+$samtools view -h -F 0x100 $bam | samtools view -bS - > $(echo $bam | sed -r 's/bam$/nosecond.bam/')
+
+bam=$(echo $bam | sed -r 's/bam$/nosecond.bam/')
+
+echo $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
+$java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
+
+if [[ $MD -eq 1 ]]; then
+    #$java6 -jar $picard MarkDuplicates I=$bam O=$(echo $bam | sed -r 's/bam$/MD.bam/') M=${bam}.metric REMOVE_DUPLICATES=FALSE VALIDATION_STRINGENCY=SILENT
+    echo $java8 -jar $picard MarkDuplicates I=$bam O=$(echo $bam | sed -r 's/bam$/MD.bam/') M=${bam}.metric REMOVE_DUPLICATES=FALSE VALIDATION_STRINGENCY=SILENT
+    $java8 -jar $picard MarkDuplicates I=$bam O=$(echo $bam | sed -r 's/bam$/MD.bam/') M=${bam}.metric REMOVE_DUPLICATES=FALSE VALIDATION_STRINGENCY=SILENT
+    
+    bam=$(echo $bam | sed -r 's/bam$/MD.bam/')
+fi
+
+#$java6 -jar $picard AddOrReplaceReadGroups I=$bam O=$(echo $bam | sed -r 's/bam$/RG.bam/') RGID=${lib} RGLB=${lib} RGPU=PU_${lib} RGSM=$sample RGPL=illumina VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true
+echo $java8 -jar $picard AddOrReplaceReadGroups I=$bam O=$(echo $bam | sed -r 's/bam$/RG.bam/') RGID=${lib} RGLB=${lib} RGPU=PU_${lib} RGSM=$sample RGPL=illumina VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true
+$java8 -jar $picard AddOrReplaceReadGroups I=$bam O=$(echo $bam | sed -r 's/bam$/RG.bam/') RGID=${lib} RGLB=${lib} RGPU=PU_${lib} RGSM=$sample RGPL=illumina VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true
+
+bam=$(echo $bam | sed -r 's/bam$/RG.bam/')
+
+echo mv $(echo $bam | sed -r 's/bam$/bai/') $bam.bai
+mv $(echo $bam | sed -r 's/bam$/bai/') $bam.bai
+
 if [[ $ROI == "null" ]]; then
     if [[ $deep -eq 1 ]]; then
         echo $java -jar $gatk -T RealignerTargetCreator -R $refGenome -I $bam -o $lib.forIndelRealigner.intervals --known $known_indel_file1 --known $known_indel_file2 -dt NONE
@@ -64,6 +102,7 @@ else
     $java -jar $gatk -T IndelRealigner -R $refGenome -I $bam -targetIntervals $lib.forIndelRealigner.intervals -o $(echo $bam | sed -r 's/bam$/IR.bam/') -known $known_indel_file1 -known $known_indel_file2
 fi
 
+
 bam=$(echo $bam | sed -r 's/bam$/IR.bam/')
 
 if [[ $ROI == "null" ]]; then
@@ -75,44 +114,46 @@ else
 fi
 
 echo $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
+$java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
 
-if [[ $BAQ -eq 1 ]]; then
-    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
+bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
 
-    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
+echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
+$samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
 
-    echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
-    $samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
-    
-    bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/g')
-else
-    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table
-
-    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
-fi
-
+bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/')
+#$samtools index $bam
+#$java6 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 echo $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 
 echo $samstat $bam # to check MAPQ proportion
 $samstat $bam # to check MAPQ proportion
 
-if [[ $DOC -eq 1 ]]; then
-    if [[ $ROI == "null" ]]; then
-        if [[ $deep -eq 1 ]]; then
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
-        else
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-        fi
+if [[ $ROI == "null" ]]; then
+    if [[ $deep -eq 1 ]]; then
+        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
     else
-        if [[ $deep -eq 1 ]]; then
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-        else
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
-        fi
+        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+    fi
+else
+    if [[ $deep -eq 1 ]]; then
+        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+    else
+        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
     fi
 fi
+
+# # don't have option INTERVALS, designed for WGS
+# #$java6 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
+# echo $java8 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
+# $java8 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
+# 
+# #$java6 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
+# echo $java8 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
+# $java8 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
+

@@ -7,8 +7,6 @@ Xmx=$4
 sorted=$5 # 1 means sorted
 ROI=$6 # if NA, use null
 deep=$7 # if 1, deep sequencing, remove downsampling in RTC, IR, DOC 
-BAQ=$8 # if 1, do BAQ
-DOC=$9 # if 1, do DOC
 
 gatk=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/GATK/GenomeAnalysisTK-3.5/GenomeAnalysisTK.jar
 java="java -XX:+UseSerialGC -Xmx$Xmx"
@@ -75,44 +73,34 @@ else
 fi
 
 echo $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
+$java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
 
-if [[ $BAQ -eq 1 ]]; then
-    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
+bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
 
-    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
+echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
+$samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
 
-    echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
-    $samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
-    
-    bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/g')
-else
-    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table
-
-    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
-fi
-
+bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/g')
 echo $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 
 echo $samstat $bam # to check MAPQ proportion
 $samstat $bam # to check MAPQ proportion
 
-if [[ $DOC -eq 1 ]]; then
-    if [[ $ROI == "null" ]]; then
-        if [[ $deep -eq 1 ]]; then
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
-        else
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-        fi
-    else
-        if [[ $deep -eq 1 ]]; then
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-        else
-            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
-            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
-        fi
-    fi
-fi
+# if [[ $ROI == "null" ]]; then
+#     if [[ $deep -eq 1 ]]; then
+#         echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+#         $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+#     else
+#         echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+#         $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+#     fi
+# else
+#     if [[ $deep -eq 1 ]]; then
+#         echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+#         $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+#     else
+#         echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+#         $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+#     fi
+# fi

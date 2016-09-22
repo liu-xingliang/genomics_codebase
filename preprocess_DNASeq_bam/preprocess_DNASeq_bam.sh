@@ -8,6 +8,8 @@ sorted=$5 # 1 means sorted
 ROI=$6 # if NA, use null
 deep=$7 # if 1, deep sequencing, remove downsampling in RTC, IR, DOC 
 MD=$8 # if 1, mark duplicates
+BAQ=$9 # if 1, do BAQ
+DOC=$10 # if 1, do DOC
 
 gatk=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/GATK/GenomeAnalysisTK-3.5/GenomeAnalysisTK.jar
 java="java -XX:+UseSerialGC -Xmx$Xmx"
@@ -114,14 +116,20 @@ else
 fi
 
 echo $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
-$java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
 
-bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
+if [[ $BAQ -eq 1 ]]; then
+    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table -baq RECALCULATE
+    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
 
-echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
-$samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
+    echo $samtools calmd -Abr $bam $refGenome '>' $(echo $bam | sed -r 's/bam$/BAQ.bam/')
+    $samtools calmd -Abr $bam $refGenome > $(echo $bam | sed -r 's/bam$/BAQ.bam/')
+    
+    bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/')
+else
+    $java -jar $gatk -T PrintReads -R $refGenome -o $(echo $bam | sed -r 's/bam$/BQSR.bam/') -I ${bam} -BQSR ${lib}.recal_data.table
+    bam=$(echo $bam | sed -r 's/bam$/BQSR.bam/')
+fi
 
-bam=$(echo $bam | sed -r 's/bam$/BAQ.bam/')
 #$samtools index $bam
 #$java6 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 echo $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
@@ -130,30 +138,22 @@ $java8 -jar $picard BuildBamIndex I=$bam O=$bam.bai VALIDATION_STRINGENCY=SILENT
 echo $samstat $bam # to check MAPQ proportion
 $samstat $bam # to check MAPQ proportion
 
-if [[ $ROI == "null" ]]; then
-    if [[ $deep -eq 1 ]]; then
-        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
-        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+if [[ $DOC -eq 1 ]]; then
+    if [[ $ROI == "null" ]]; then
+        if [[ $deep -eq 1 ]]; then
+            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -dt NONE
+        else
+            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
+        fi
     else
-        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome 
-    fi
-else
-    if [[ $deep -eq 1 ]]; then
-        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
-    else
-        echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
-        $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+        if [[ $deep -eq 1 ]]; then
+            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI -dt NONE
+        else
+            echo $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+            $java -jar $gatk -T DepthOfCoverage -I $bam -o $bam.DOC -R $refGenome -L $ROI
+        fi
     fi
 fi
-
-# # don't have option INTERVALS, designed for WGS
-# #$java6 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
-# echo $java8 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
-# $java8 -jar $picard CollectGcBiasMetrics CHART_OUTPUT=$bam.gcbias.pdf SUMMARY_OUTPUT=$bam.gcbias.summary MINIMUM_GENOME_FRACTION=0 I=$bam O=$bam.gcbias.out REFERENCE_SEQUENCE=$refGenome
-# 
-# #$java6 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
-# echo $java8 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
-# $java8 -jar $picard QualityScoreDistribution I=$bam CHART_OUTPUT=$bam.QSdist.pdf O=$bam.QSdist ASSUME_SORTED=true
-
