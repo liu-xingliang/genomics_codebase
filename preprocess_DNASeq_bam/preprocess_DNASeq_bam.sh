@@ -9,7 +9,7 @@ ROI=$6 # if NA, use null
 deep=$7 # if 1, deep sequencing, remove downsampling in RTC, IR, DOC 
 MD=$8 # if 1, mark duplicates
 BAQ=$9 # if 1, do BAQ
-DOC=$10 # if 1, do DOC
+DOC=${10} # if 1, do DOC
 
 gatk=/mnt/projects/liuxl/ctso4_projects/liuxl/Tools/GATK/GenomeAnalysisTK-3.5/GenomeAnalysisTK.jar
 java="java -XX:+UseSerialGC -Xmx$Xmx"
