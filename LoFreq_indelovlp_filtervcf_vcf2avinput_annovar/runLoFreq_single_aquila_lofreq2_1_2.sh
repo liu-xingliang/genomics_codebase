@@ -10,7 +10,7 @@ h_vmem=$6
 Xmx=$7
 suffix="${8}lofreq2_1_2" # suffix of -o of lofreq
 hold_jids=$9 # NA is "NA"
-vcf2avinput_annovar=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/LoFreq_indelovlp_filtervcf_vcf2avinput_annovar/vcf2avinput_annovar_lofreq2_1_2.sh
+vcf2avinput_annovar=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github/LoFreq_indelovlp_filtervcf_vcf2avinput_annovar/vcf2avinput_annovar_lofreq2_1_2.sh
 cp $vcf2avinput_annovar .
 vcf2avinput_annovar=$(basename $vcf2avinput_annovar)
 
