@@ -3,7 +3,7 @@
 mem_free=$2
 Xmx=$3
 
-merge_scripts=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/ovlp_and_rmprimer_splitchr/merge.sh
+merge_scripts=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github/ovlp_and_rmprimer_splitchr/merge.sh
 cp $merge_scripts .
 merge_scripts=$(basename $merge_scripts)
 

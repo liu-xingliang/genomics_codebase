@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# this scripts can be used for all versions of perl_scripts
+# this scripts can be used for all versions of perl_scripts (locusebased and matchprimer)
 
 not_empty_chrlist=$2 #/mnt/projects/liuxl/ctso4_projects/liuxl/SayLi/JCO/lungprimer/not_empty/locusbased_rmprimer/human_g1k_v37_chrlist_not_empty
 primer_dir=$3 # /mnt/projects/liuxl/ctso4_projects/liuxl/SayLi/dataquality_2016Apr/BC50_primers/not_empty/locusbased_rmprimer/human_g1k_v37/ 
 
-perl_scripts=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/ovlp_and_rmprimer_splitchr/ovlp_and_rmprimer_splitchr_locusebased_aquila.pl # need to be changed for different version of perl_scripts 
+perl_scripts=/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github/ovlp_and_rmprimer_splitchr/ovlp_and_rmprimer_splitchr_locusebased_aquila.pl # need to be changed for different version of perl_scripts 
 cp  $perl_scripts .
 perl_scripts=$(basename $perl_scripts)
 
