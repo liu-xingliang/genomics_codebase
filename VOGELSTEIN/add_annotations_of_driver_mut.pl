@@ -3,7 +3,7 @@
 $input_file = $ARGV[0];
 open(read_input_file, "<", $input_file) or die "Cannot read $input_file\n";;
 
-$list_of_tsg_genes = '/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/VOGELSTEIN/list_of_TSG_oncogenes_Vogelstein_Science_2013.txt';
+$list_of_tsg_genes = '/mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github/VOGELSTEIN/list_of_TSG_oncogenes_Vogelstein_Science_2013.txt';
 open(readfile, "<", $list_of_tsg_genes) or die "Cannot open $list_of_tsg_genes";
 
 $output_file = $input_file.".mutdriver";
