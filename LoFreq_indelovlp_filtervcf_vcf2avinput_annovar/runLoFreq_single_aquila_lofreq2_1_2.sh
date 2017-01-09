@@ -6,7 +6,7 @@ bam_suffix=$2
 refGenome=$3
 ROI=$4 # if no, use "NA"
 dbSNP=$5
-h_vmem=$6
+mem_free=$6
 Xmx=$7
 suffix="${8}lofreq2_1_2" # suffix of -o of lofreq
 hold_jids=$9 # NA is "NA"
@@ -28,7 +28,7 @@ do
     echo '#$ -o' $qjob.log >> $uge
     echo '#$ -e' $qjob.err >> $uge
     echo '#$ -q medium.q' >> $uge
-    echo '#$ -l h_rt=48:00:00,h_vmem='$h_vmem' -pe OpenMP 1' >> $uge
+    echo '#$ -l h_rt=48:00:00,mem_free='$mem_free' -pe OpenMP 1' >> $uge
     [[ $hold_jids == "NA" ]] || echo '#$ -hold_jid' $hold_jids >> $uge
     echo '#$ -cwd' >> $uge
     echo 'source /mnt/software/etc/gis.bashrc' >> $uge
