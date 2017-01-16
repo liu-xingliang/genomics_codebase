@@ -47,8 +47,8 @@ $qgetcounts -i $nbam -a $amplicons_coords --minmapq 30 --primerlen ${primerlen} 
 
 
 if [[ $refversion == "human_g1k_v37" ]]; then
-    java -XX:+UseSerialGC -Xmx$Xmx -cp /mnt/projects/liuxl/ctso4_projects/liuxl/scripts convert_hg19_and_human_g1k_v37 $tbam.counts $tbam.hg19.counts 1 human_g1k_v37 hg19
-    java -XX:+UseSerialGC -Xmx$Xmx -cp /mnt/projects/liuxl/ctso4_projects/liuxl/scripts convert_hg19_and_human_g1k_v37 $nbam.counts $nbam.hg19.counts 1 human_g1k_v37 hg19
+    java -XX:+UseSerialGC -Xmx$Xmx -cp /mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github convert_hg19_and_human_g1k_v37 $tbam.counts $tbam.hg19.counts 1 human_g1k_v37 hg19
+    java -XX:+UseSerialGC -Xmx$Xmx -cp /mnt/projects/liuxl/ctso4_projects/liuxl/scripts/github convert_hg19_and_human_g1k_v37 $nbam.counts $nbam.hg19.counts 1 human_g1k_v37 hg19
     $qcluster -i $tbam.hg19.counts --above $maxgap --below $mingap --names $refGene > $tbam.cluster
     $qcluster -i $nbam.hg19.counts --above $maxgap --below $mingap --names $refGene > $nbam.cluster
     $quandico -s data=$tbam.cluster $t_XY -r data=$nbam.cluster $n_XY -a data=$refGenome -a version=hg19 --no-cluster -d $output_dir -b $output_prefix --cp names=$refGene --rexe /mnt/software/stow/R-3.1.2/bin/R-3.1.2 # the highest R version can be used is 3.1.2
