@@ -20,7 +20,7 @@ do
 
     cd ${bam}_d
 
-    perl $perl_scripts $bam 30G 20G \
+    perl $perl_scripts $bam $Xmx $mem_free \
     $not_empty_chrlist \
     "/mnt/projects/liuxl/ctso4_projects/liuxl/myTools/OverlapBaseRefine.jar" \
     /mnt/projects/liuxl/ctso4_projects/liuxl/myTools/PrimerTrimmer_LocusBased_IndelQual_BAQ.jar \
