@@ -43,15 +43,15 @@ while(<CHRS>) {
     print H_uge "#\$ -o $qjob.log\n";
     print H_uge "#\$ -e $qjob.err\n";
     print H_uge "#\$ -q medium.q\n";
-    print H_uge "#\$ -l h_rt=48:00:00,mem_free=$mem_free -pe OpenMP 1\n";
+    print H_uge "#\$ -l h_rt=48:00:00,mem_free=${mem_free} -pe OpenMP 1\n";
     print H_uge "#\$ -cwd\n";
     print H_uge "#\$ -hold_jid $hold_jids\n" if $hold_jids ne "NA"; # checked
     print H_uge "source /mnt/software/etc/gis.bashrc\n";
     print H_uge "source /opt/uge-8.1.7p3/aquila_cell/common/settings.sh\n";
     print H_uge "$samtools view -h $input_bam $chr | $samtools view -Sb - > part_${input_bam}_$chr.bam 2>$qjob.runlog\n";
-    print H_uge "$java6 -Xmx$Xmx -XX:+UseSerialGC -jar $ovlp part_${input_bam}_$chr.bam part_${input_bam}_$chr.bam.ovlprefine.bam >>$qjob.runlog 2>&1\n";
-    print H_uge "$java6 -Xmx$Xmx -XX:+UseSerialGC -jar $rmprimer part_${input_bam}_$chr.bam.ovlprefine.bam part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam $primer_dir/primerpair_$chr.txt 5 5 >>$qjob.runlog 2>&1\n";
-    print H_uge "$java8 -Xmx$Xmx -XX:+UseSerialGC -jar $picard SortSam I=part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam O=part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam.sorted.bam SO=coordinate VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true >>$qjob.runlog 2>&1\n";
+    print H_uge "$java6 -Xmx${Xmx} -XX:+UseSerialGC -jar $ovlp part_${input_bam}_$chr.bam part_${input_bam}_$chr.bam.ovlprefine.bam >>$qjob.runlog 2>&1\n";
+    print H_uge "$java6 -Xmx${Xmx} -XX:+UseSerialGC -jar $rmprimer part_${input_bam}_$chr.bam.ovlprefine.bam part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam $primer_dir/primerpair_$chr.txt 5 5 >>$qjob.runlog 2>&1\n";
+    print H_uge "$java8 -Xmx${Xmx} -XX:+UseSerialGC -jar $picard SortSam I=part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam O=part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam.sorted.bam SO=coordinate VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true >>$qjob.runlog 2>&1\n";
     print split_bam_list "part_${input_bam}_$chr.bam.ovlprefine.bam.rmprimer.bam.sorted.bam\n";
     close H_uge;
     `qsub -terse < $uge >> $jids`;
